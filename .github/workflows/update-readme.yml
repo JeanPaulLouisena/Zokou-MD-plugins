@@ -1,33 +1,43 @@
-name: Update README
+name: Node.js CI
 
 on:
   push:
     branches:
-      - master
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 */4 * * *'
 
 jobs:
-  update-readme:
+  build:
+
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [20.x]
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
 
-      - name: Install dependencies
-        run: npm install
+    - name: Install ffmpeg
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
 
-      - name: Generate README
-        run: node index.js
+    - name: Install dependencies
+      run: |
+        npm install -g pm2
+        npm install
 
-      - name: Commit README
-        run: |
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git add ZOKOU-VE.md README.md ZOKOU-VF.md
-          git commit -m "Update plugins"
-          git push
+    - name: Start application with timeout
+      run: |
+        timeout 14520s npm run zokou
